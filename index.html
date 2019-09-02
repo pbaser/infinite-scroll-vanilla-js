@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+  <meta name="viewport" content="width=300, initial-scale: .3" />
+  <head>
+    <title>Page Title</title>
+
+    <style>
+      body {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 90vh;
+      }
+      ul {
+        list-style: none;
+      }
+      .wrapper {
+        height: 600px;
+        overflow: scroll;
+      }
+      .container {
+        padding-bottom: 300px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Infinte Scroll Vanilla JS, <i>The Right Way</i></h1>
+    <div class="wrapper">
+      <ul class="container" id="users"></ul>
+    </div>
+
+    <script>
+      (function(container) {
+        const scrollBody = document.querySelector(".wrapper");
+        const contentparent = document.querySelector(".container");
+        const numberOfRecords = 20;
+
+        const imageBaseUrl =
+          "https://via.placeholder.com/500x300.png/0000FF%20C/O%20https://placeholder.com/?text=image";
+        const title = "Placeholder";
+
+        let currentIndex = 0; // To track the index for getting the updated Data.
+        let previousIntersectionRatio = 1; // To compare with current intersection ratio
+
+        // Sample collection
+        const data = Array(100)
+          .fill(0)
+          .map((each, index) => {
+            return {
+              title: title + index,
+              src: imageBaseUrl + index
+            };
+          });
+
+        const handleIntersection = (entries, observer) => {
+          entries.forEach(entry => {
+            const id = entry.target.id;
+            const intersectionRatio = entry.intersectionRatio;
+            let scrollDirection;
+            if (id === "record-0") {
+              // Top element intersecting
+              if (intersectionRatio > previousIntersectionRatio) {
+                scrollDirection = "up";
+                currentIndex = getSlidingWindow(scrollDirection);
+                adjustPadding(scrollDirection);
+                getMore(contentparent);
+              }
+            } else if (id === "record-19") {
+              // Bottom element intersecting
+              if (intersectionRatio > previousIntersectionRatio) {
+                scrollDirection = "down";
+                currentIndex = getSlidingWindow(scrollDirection);
+                adjustPadding(scrollDirection);
+                getMore(contentparent);
+              }
+            }
+
+            previousIntersectionRatio = entry.intersectionRatio;
+          });
+        };
+
+        const intersectionObserver = new IntersectionObserver(
+          handleIntersection,
+          {
+            root: scrollBody,
+            threshold: [0, 0.25, 0.5, 0.75, 1]
+          }
+        );
+
+        const adjustPadding = scrollDirection => {
+          let topPadding = contentparent.style.paddingTop || 0;
+          let bottomPadding = contentparent.style.paddingBottom || 0;
+
+          topPadding = parseInt(topPadding, 10);
+          bottomPadding = parseInt(bottomPadding, 10);
+
+          const paddingToBeApplied = 344 * (numberOfRecords / 2);
+
+          if (scrollDirection === "down") {
+            contentparent.style.paddingTop =
+              topPadding + paddingToBeApplied + "px";
+
+            contentparent.style.paddingBottom =
+              bottomPadding === 0
+                ? "0px"
+                : bottomPadding - paddingToBeApplied + "px";
+          } else {
+            contentparent.style.paddingBottom =
+              bottomPadding + paddingToBeApplied + "px";
+
+            contentparent.style.paddingTop =
+              topPadding === 0 ? "0px" : topPadding - paddingToBeApplied + "px";
+          }
+        };
+
+        const getSlidingWindow = scrollDirection => {
+          let firstIndex;
+
+          if (scrollDirection === "down") {
+            firstIndex = currentIndex + numberOfRecords / 2;
+          } else {
+            firstIndex = currentIndex - numberOfRecords / 2;
+          }
+
+          if (firstIndex < 0) firstIndex = 0;
+
+          return firstIndex;
+        };
+
+        const getMore = body => {
+          for (i = 0; i < numberOfRecords; i++) {
+            const li = document.querySelector(`#record-${i}`);
+
+            li.firstElementChild.childNodes[0].nodeValue =
+              data[i + currentIndex].title;
+            li.lastElementChild.setAttribute("src", data[i + currentIndex].src);
+          }
+        };
+
+        const getFirstFewRecords = body => {
+          for (i = 0; i < numberOfRecords; i++) {
+            const li = document.createElement("li");
+            li.setAttribute("id", `record-${i}`);
+
+            const recordTitle = document.createElement("h3");
+            const recordTitleText = document.createTextNode(data[i].title);
+            recordTitle.appendChild(recordTitleText);
+
+            const recordImg = document.createElement("img");
+            recordImg.setAttribute("src", data[i].src);
+
+            li.appendChild(recordTitle);
+            li.appendChild(recordImg);
+            body.appendChild(li);
+          }
+        };
+
+        // Get initial 20 records
+        getFirstFewRecords(contentparent);
+
+        const topElement = document.querySelector("#record-0");
+        const bottomElement = document.querySelector("#record-19");
+
+        /* Observe the top and bottom li to identify the scrolling direction 
+        and if user has reached at top or bottom of the page **/
+        intersectionObserver.observe(topElement);
+        intersectionObserver.observe(bottomElement);
+      })("#users");
+    </script>
+  </body>
+</html>
